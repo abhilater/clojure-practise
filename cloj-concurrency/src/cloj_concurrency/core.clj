@@ -193,10 +193,88 @@
   )
 
 
-
 (comment
   (test-search-generic "abhishek"
                        default-search-engines)
 
   (search "clojure" default-search-engines)
   )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Clojure Metaphysics;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;; Atoms
+(def fred (atom {
+             :cuddle-hunger-level 0
+             :percent-deteriorated 0
+             }))
+
+(let [zombie-state @fred]
+  (if (>= (:percent-deteriorated zombie-state) 50)
+    (future (println (:cuddle-hunger-level zombie-state)))))
+
+(swap! fred (fn [current-state]
+              (merge-with +
+                          current-state
+                          {:cuddle-hunger-level 1 :percent-deteriorated 1})))
+;;;Sometimes you’ll want to update an atom without checking its current value
+(reset! fred {:cuddle-hunger-level 0
+              :percent-deteriorated 0})
+;;;Compare-set semantics
+;1. It reads the current state of the atom.
+;2. It then applies the update function to that state.
+;3. Next, it checks whether the value it read in step 1 is identical to the atom’s current value.
+;4. If it is, then swap! updates the atom to refer to the result of step 2
+;5. If it isn’t, then swap! retries, going through the process again with step 1
+
+;Watches allow you to be super creepy and check in on your reference types’
+; every move. Validators allow you to be super controlling and restrict what
+; states are allowable
+(defn shuffle-speed
+  [zombie]
+  (* (:cuddle-hunger-level zombie)
+     (- 100 (:percent-deteriorated zombie))))
+
+(defn shuffle-alert
+  [key watched old-state new-state]
+  (let [sph (shuffle-speed new-state)]
+    (if (> sph 5000)
+      (do
+        (println "Run, you fool!")
+        (println "The zombie's SPH is now " sph)
+        (println "This message brought to your courtesy of " key))
+      (do
+        (println "All's well with " key)
+        (println "Cuddle hunger: " (:cuddle-hunger-level new-state))
+        (println "Percent deteriorated: " (:percent-deteriorated new-state))
+        (println "SPH: " sph)))))
+
+(reset! fred {:cuddle-hunger-level 22 :percent-deteriorated 2})
+(add-watch fred :fred-shuffle-alert shuffle-alert)
+(swap! fred update-in [:percent-deteriorated] + 1)
+; => All's well with  :fred-shuffle-alert
+; => Cuddle hunger:  22
+; => Percent deteriorated:  3
+; => SPH:  2134
+
+(swap! fred update-in [:cuddle-hunger-level] + 30)
+; => Run, you fool!
+; => The zombie's SPH is now 5044
+; => This message brought to your courtesy of :fred-shuffle-alert
+
+;;; Validators --When you add a validator to a reference, the reference is modified
+;;; so that, whenever it’s updated, it will call this validator with the value
+;;; returned from the update function as its argument. If the validator fails by
+;;; returning false or throwing an exception, the reference won’t change to point
+;;; to the new value.
+(defn percent-deteriorated-validator
+  [{:keys [percent-deteriorated]}]
+  (or (and (>= percent-deteriorated 0)
+       (<= percent-deteriorated 100))
+      (throw (IllegalStateException. "That's not mathy!"))))
+
+(def bobby
+  (atom
+    {:cuddle-hunger-level 0 :percent-deteriorated 0}
+    :validator percent-deteriorated-validator))
+(swap! bobby update-in [:percent-deteriorated] + 200)
