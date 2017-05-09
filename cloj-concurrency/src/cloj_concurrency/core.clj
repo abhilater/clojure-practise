@@ -206,7 +206,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Clojure Metaphysics;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;;; Atoms
+(comment
+  ;;; Atoms
 (def fred (atom {
              :cuddle-hunger-level 0
              :percent-deteriorated 0
@@ -371,3 +372,73 @@
 ;As you can see, commute doesn’t ever force a transaction retry. This can
 ;help improve performance, but it’s important that you only use commute
 ;when you’re sure that it’s not possible for your refs to end up in an invalid state
+
+;;; vars
+;When I first introduced def, I implored you to treat it as if it’s defining a constant.
+; It turns out that vars are a bit more flexible than that: you can create
+; a dynamic var whose binding can be changed. Dynamic vars can be useful
+; for creating a global name that should refer to different values in different contexts.
+
+(def ^:dynamic *notification-address* "dobby@elf.org")
+(binding [*notification-address* "test@elf.org"]
+  *notification-address*)
+; => "test@elf.org"
+;;; Stacked bindings
+(binding [*notification-address* "tester-1@elf.org"]
+  (println *notification-address*)
+  (binding [*notification-address* "tester-2@elf.org"]
+    (println *notification-address*))
+  (println *notification-address*))
+;;; Practical use case
+;;; This is much less burdensome than passing an output destination to every
+;;; invocation of println. Dynamic vars are a great way to specify a common resource
+;;; while retaining the flexibility to change it on an ad hoc basis.
+(binding [*out* (clojure.java.io/writer "print-output")]
+  (println "A man who carries a cat by the tail learns
+something he can learn in no other way.
+-- Mark Twain"))
+(slurp "print-output")
+; => A man who carries a cat by the tail learns
+;something he can learn in no other way.
+;-- Mark Twain
+(def ^:dynamic *troll-thought* nil)
+(defn troll-riddle
+  [your-answer]
+  (let [number "man meat"]
+    (when (thread-bound? #'*troll-thought*)
+      (set! *troll-thought* number))
+    (if (= number your-answer)
+      "TROLL: You can cross the bridge!"
+      "TROLL: Time to eat you, succulent human!")))
+
+(binding [*troll-thought* nil]
+  (println (troll-riddle 2))
+  (println "SUCCULENT HUMAN: Oooooh! The answer was" *troll-thought*))
+
+; => TROLL: Time to eat you, succulent human!
+; => SUCCULENT HUMAN: Oooooh! The answer was man meat
+
+;;; Thread bindings
+(let [out *out*]
+  (.start
+    (Thread. #(binding [*out* out]
+                (.write *out* "prints to repl from thread")))))
+(.start (Thread. (bound-fn [] (.write *out* "prints to repl from thread"))))
+
+;The point is that bindings don’t get passed on to manually created threads.
+;They do, however, get passed on to futures. This is called binding conveyance
+
+;with-redefs can be used with any var, not just dynamic ones. Because it has has
+; such far-reaching effects, you should only use it during testing. For example,
+; you could use it to redefine a function that returns data from a network call,
+; so that the function returns mock data without having to actually make a network
+; request.
+(with-redefs [*out* *out*]
+  (doto (Thread. #(println "with redefs allows me to show up in the REPL"))
+    .start
+    .join))
+
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;Stateless Concurrency and Parallelism with pmap;;;;;;;;;;;;;;;;;;;
