@@ -1,4 +1,4 @@
-(ns learn-cloj.core-test
+(ns accounts.core-test
   (:require [clojure.test :refer :all]
             [learn-cloj.core :refer :all]))
 

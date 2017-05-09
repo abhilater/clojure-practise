@@ -1,4 +1,4 @@
-(ns learn-cloj.core
+(ns accounts.core
   (:gen-class))
 
 (defn -main
@@ -7,7 +7,7 @@
   (println "Hello, World!"))
 
 
-(def *min-bal* 500)
+(def ^:dynamic *min-bal* 500)
 
 (defstruct account
   :name

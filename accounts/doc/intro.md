@@ -1,3 +1,3 @@
-# Introduction to learn-cloj
+# Introduction to accounts
 
 TODO: write [great documentation](http://jacobian.org/writing/what-to-write/)

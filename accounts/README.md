@@ -1,4 +1,4 @@
-# learn-cloj
+# accounts
 
 FIXME: description
 
@@ -10,7 +10,7 @@ Download from http://example.com/FIXME.
 
 FIXME: explanation
 
-    $ java -jar learn-cloj-0.1.0-standalone.jar [args]
+    $ java -jar accounts-0.1.0-standalone.jar [args]
 
 ## Options
 
