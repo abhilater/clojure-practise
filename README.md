@@ -1,7 +1,7 @@
 # cloj-practise
 
 ## TODO
-[] Clojure uses software transactional memory (STM)
+- [ ] Clojure uses software transactional memory (STM)
 
 ### Might be Useful
 
