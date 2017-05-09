@@ -497,6 +497,7 @@ something he can learn in no other way.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Exercises;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(comment
 ;1. Create an atom with the initial value 0, use swap! to increment it a couple
 ; of times, and then dereference it.
 (def an-atom (atom 0))
@@ -634,3 +635,31 @@ something he can learn in no other way.
                  (swap! wc (fn [current-wc]
                              (merge-with + current-wc (word-count (slurp rq-url))))))
       @wc)))
+
+; Exercise 3:
+; Create a representation of two characters in a game. The first character has
+; 15 health points out of a total of 40.  The second character has a healing
+; potion in his inventory.  Use refs and transactions to model the consumption
+; of the healing potion and the first character healing.
+
+(defn str-character-state
+  "Given a character map, return a string of its state"
+  [character]
+  (clojure.string/join " " (map #(str % " => " (get character %)) (keys character))))
+
+(defn ex3
+  "Model the consumption of character 2's health potion by character 1"
+  []
+  (let [guy1 (ref {:hp 15 :max-hp 40 :health-potions 0})
+        guy2 (ref {:hp 40 :max-hp 40 :health-potions 1})]
+    (do
+      (println (str "Character 1: " (str-character-state @guy1)))
+      (println (str "Character 2: " (str-character-state @guy2)))
+      (println "Drinking potion....")
+      (dosync
+        (alter guy2 update-in [:health-potions] dec)
+        (alter guy1 update-in [:hp] + (- (:max-hp @guy1) (:hp @guy1))))
+      (println (str "Character 1: " (str-character-state @guy1)))
+      (println (str "Character 2: " (str-character-state @guy2))))))
+
+)
