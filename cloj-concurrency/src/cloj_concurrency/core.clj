@@ -442,3 +442,195 @@ something he can learn in no other way.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;Stateless Concurrency and Parallelism with pmap;;;;;;;;;;;;;;;;;;;
+(comment
+(def alphabet-length 26)
+
+;; Vector of chars, A-Z
+(def letters (mapv (comp str char (partial + 65)) (range alphabet-length)))
+
+(defn random-string
+  "Returns a random string of specified length"
+  [length]
+  (apply str (take length (repeatedly #(rand-nth letters)))))
+
+(defn random-string-list
+  [list-length string-length]
+  (doall (take list-length (repeatedly (partial random-string string-length)))))
+
+(def orc-names (random-string-list 3000 7000))
+
+(time (dorun (map clojure.string/lower-case orc-names)))
+"Elapsed time: 62.146644 msecs"
+
+(time (dorun (pmap clojure.string/lower-case orc-names)))
+"Elapsed time: 30.498653 msecs"
+
+; Add grain size sublist concept using partition-all
+(def numbers [1 2 3 4 5 6 7 8 9 10])
+(partition-all 3 numbers)
+; => ((1 2 3) (4 5 6) (7 8 9) (10))
+(pmap (fn [number-group] (doall (map inc number-group)))
+      (partition-all 3 numbers))
+
+;doall within the mapping function. This forces the lazy sequence returned by
+; (map inc number-group) to be realized within the thread. Third, we need to
+; ungroup the result. Here’s how we can do that
+(apply concat
+       (pmap (fn [number-group] (doall (map inc number-group)))
+             (partition-all 3 numbers)))
+(time
+  (dorun
+    (apply concat
+           (pmap (fn [name] (doall (map clojure.string/lower-case name)))
+                 (partition-all 1000 orc-names)))))
+;"Elapsed time: 24.383568 msecs"
+
+(defn ppmap
+  "Partitioned pmap, for grouping map ops together to make parallel
+  overhead worthwhile"
+  [grain-size f & colls]
+  (apply concat
+         (apply pmap
+                (fn [& pgroups] (doall (apply map f pgroups)))
+                (map (partial partition-all grain-size) colls))))
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Exercises;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;1. Create an atom with the initial value 0, use swap! to increment it a couple
+; of times, and then dereference it.
+(def an-atom (atom 0))
+(swap! an-atom inc)
+(swap! an-atom inc)
+@an-atom
+
+;2. Create a function that uses futures to parallelize the task of downloading
+; andom quotes fromhttp://www.braveclojure.com/random-quote using
+; (slurp "http://www.braveclojure.com/random-quote"). The futures should update
+; an atom that refers to a total word count for all quotes. The function will
+; take the number of quotes to download as an argument and return the atom’s
+; final value. Keep in mind that you’ll need to ensure that all futures have
+; finished before returning the atom’s final value. Here’s how you would call
+; it and an example result:
+;(quote-word-count 5)
+; => {"ochre" 8, "smoothie" 2}
+(def random-quote-res "http://www.braveclojure.com/random-quote")
+
+(defn fetch-rand-quote-fut
+  []
+  (future (slurp random-quote-res)))
+
+(defn to-word-list
+  [quote-str]
+  (clojure.string/split quote-str #"[ ,]")
+  )
+
+(defn fetch-fut-list
+  "Fetch list of specified futures"
+  [limit]
+  (println "fetch-fut-list limit" limit)
+  (loop [cnt limit, futs []]
+    (if (= cnt 0)
+      futs
+      (recur
+        (dec cnt)
+        (conj futs (fetch-rand-quote-fut))
+        )))
+  )
+
+(defn generate-word-list
+  [limit]
+  (println "generate-word-list limit" limit)
+  (reduce (fn [res it]
+            (concat res (to-word-list (deref it)))) [] (fetch-fut-list limit))
+  )
+
+(defn quote-word-count
+  "Exercise 2"
+  [limit]
+  (reduce (fn [res it]
+            (if (contains? res it)
+              (assoc res it (inc (get res it)))
+              (assoc res it 1)
+              )
+            ) {} (generate-word-list limit))
+  )
+
+;;; Super awesome solution
+(defn get-raw-quote []
+  (slurp "http://www.braveclojure.com/random-quote"))
+
+(defn parse-quote [raw-quote]
+  (-> raw-quote
+      (clojure.string/split #"--")
+      first                                                 ; discard author
+      clojure.string/trim))
+
+(defn get-quote []
+  (-> (get-raw-quote) parse-quote))
+
+(defn get-words [quote]
+  (-> quote
+      clojure.string/lower-case
+      (clojure.string/replace #"[^ A-Za-z]*" "")               ; removes punctuation from quote
+      (clojure.string/split #" ")))
+
+(defn histogramize [histogram words]
+  (reduce
+    (fn [histogram word]
+      (update histogram word (fnil inc 0)))                 ; when val is nil, replace it with 0, then increment
+    histogram
+    words))
+
+
+(defn quote-word-count-better [number-of-quotes]
+  "Returns a histogram of the word counts in `number-of-quotes`
+   quotes retrieved from http://www.braveclojure.com/random-quote"
+  (let [word-count (atom {})]
+    (doall
+      (pmap
+        (fn [_]
+          (swap! word-count
+                 (fn [histogram]
+                   (histogramize histogram (-> (get-quote)
+                                               get-words)))))
+        (range number-of-quotes)))
+    @word-count))
+
+; Exercise 2:
+; Create a function that uses futures to parallelize the task of
+; downloading random qutes from  http://www.braveclojure.com/random-quote
+; using (slurp "http://www.braveclojure.com/random-quote"). The futures
+; should update an atom that refers to a total word count for all quotes.
+; The function will take the number of quotes to download as an argument
+; and return the atom's final value
+
+(def rq-url "http://www.braveclojure.com/random-quote")
+
+(defn word-count
+  "Given a string, return a mapping of words to word count"
+  [wctext]
+  (->> (clojure.string/split wctext #"[ .;?!\-\n\r]")
+       (filter #(not (empty? %)))
+       (map #(clojure.string/lower-case %))
+       (frequencies)))
+
+(defmacro n-futures
+  "Create n-futures that all execute the same task, then block and wait
+  for each future to finish"
+  [n body]
+  `(let [promises# (take ~n (repeatedly promise))]
+     (doseq [p# promises#]
+       (do ~body (deliver p# true)))
+     (every? ~deref promises#)))
+
+(defn random-quote-word-count
+  "Given a number of random-quotes to download, return a map of words
+  to word count for the downloaded quotes"
+  [num-quotes]
+  (let [wc (atom {})]
+    (do
+      (n-futures num-quotes
+                 (swap! wc (fn [current-wc]
+                             (merge-with + current-wc (word-count (slurp rq-url))))))
+      @wc)))
