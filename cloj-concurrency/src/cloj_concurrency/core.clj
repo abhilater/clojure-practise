@@ -6,6 +6,9 @@
   [& args]
   (println "Hello, World!"))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Clojure Concurrency;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (comment
   ;;; Future examples --- futures to define a task and place it on
   ;;; another thread without requiring the result
@@ -131,7 +134,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Exercises;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+(comment
 ; 1. Write a function that takes a string as an argument and searches for it on
 ; Bing and Google using the slurp function. Your function should
 ; return the HTML of the first page returned by the search.
@@ -198,7 +201,7 @@
                        default-search-engines)
 
   (search "clojure" default-search-engines)
-  )
+  ))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Clojure Metaphysics;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -226,6 +229,9 @@
 ;3. Next, it checks whether the value it read in step 1 is identical to the atom’s current value.
 ;4. If it is, then swap! updates the atom to refer to the result of step 2
 ;5. If it isn’t, then swap! retries, going through the process again with step 1
+
+
+
 
 ;Watches allow you to be super creepy and check in on your reference types’
 ; every move. Validators allow you to be super controlling and restrict what
@@ -262,6 +268,10 @@
 ; => The zombie's SPH is now 5044
 ; => This message brought to your courtesy of :fred-shuffle-alert
 
+
+
+
+
 ;;; Validators --When you add a validator to a reference, the reference is modified
 ;;; so that, whenever it’s updated, it will call this validator with the value
 ;;; returned from the update function as its argument. If the validator fails by
@@ -278,3 +288,86 @@
     {:cuddle-hunger-level 0 :percent-deteriorated 0}
     :validator percent-deteriorated-validator))
 (swap! bobby update-in [:percent-deteriorated] + 200)
+
+
+
+
+;;; Refs allow you to update the state of multiple identities using transaction
+;;; semantics. These transactions have three features:
+
+;1. They are atomic, meaning that all refs are updated or none of them are.
+;2. They are consistent, meaning that the refs always appear to have valid states.
+;   A sock will always belong to a dryer or a gnome, but never both or neither.
+;3. They are isolated, meaning that transactions behave as if they executed serially;
+;   if two threads are simultaneously running transactions that alter the same ref,
+;   one transaction will retry. This is similar to the compare-and-set semantics of
+;   atoms.
+
+;;; Clojure uses software transactional memory (STM)
+(def sock-varieties
+  #{"darned" "argyle" "wool" "horsehair" "mulleted"
+    "passive-aggressive" "striped" "polka-dotted"
+    "athletic" "business" "power" "invisible" "gollumed"})
+
+(defn sock-count
+  [sock-variety count]
+  {:variety sock-variety
+   :count count})
+
+(defn generate-sock-gnome
+  "Create an initial sock gnome state with no socks"
+  [name]
+  {:name name
+   :socks #{}})
+
+(def sock-gnome (ref (generate-sock-gnome "Barumpharumph")))
+(def dryer (ref {:name "LG 1337"
+                 :socks (set (map #(sock-count % 2) sock-varieties))}))
+
+(defn steal-sock
+  [sock-gnome dryer]
+  (dosync
+    (when-let [pair (some #(if (= (:count %) 2) %) (:socks @dryer))]
+      (let [updated-count (sock-count (:variety pair) 1)]
+        (alter sock-gnome update-in [:socks] conj updated-count)
+        (alter dryer update-in [:socks] disj pair)
+        (alter dryer update-in [:socks] conj updated-count)
+        )
+      )
+    ))
+(steal-sock sock-gnome dryer)
+(:socks @sock-gnome)
+;The transaction will try to commit its changes only when it ends. The commit
+; works similarly to the compare-and-set semantics of atoms.
+; Each ref is checked to see whether it’s changed since you first tried to alter it.
+; If any of the refs have changed, then none of the refs is updated and the
+; transaction is retried. For example, if Transaction A and Transaction B are
+; both attempted at the same time and events occur in the following order,
+; Transaction A will be retried:
+
+;Transaction A: alter gnome
+;Transaction B: alter gnome
+;Transaction B: alter dryer
+;Transaction B: alter dryer
+;Transaction B: commit—successfully updates gnome and dryer
+;Transaction A: alter dryer
+;Transaction A: alter dryer
+;Transaction A: commit—fails because dryer and gnome have changed; retries
+
+;;; commute
+; just like alter. However, its behavior at commit time is completely different.
+; Here’s how alter behaves:
+
+;1. Reach outside the transaction and read the ref’s current state.
+;2. Compare the current state to the state the ref started with within the transaction.
+;3. If the two differ, make the transaction retry.
+;4. Otherwise, commit the altered ref state.
+
+;commute, on the other hand, behaves like this at commit time:
+;1. Reach outside the transaction and read the ref’s current state.
+;2. Run the commute function again using the current state.
+;3. Commit the result.
+
+;As you can see, commute doesn’t ever force a transaction retry. This can
+;help improve performance, but it’s important that you only use commute
+;when you’re sure that it’s not possible for your refs to end up in an invalid state
