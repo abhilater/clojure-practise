@@ -64,10 +64,10 @@
   (clojure.string/join "\n" (map #(clojure.string/join "," (vals %)) records)))
 
 ;;; macro example
-(defmacro printandeval [expression]
+(comment (defmacro printandeval [expression]
   (let [result expression]
     (println result)
-    (eval result)))
+    (eval result))))
 
 (defmacro my-print
   [expression]
@@ -410,7 +410,7 @@ into '()
       )))
 
 #(set (for [x %1 :when (%2 x)] x))
-#(clojure.set/difference %1 (clojure.set/difference %1 %2))
+;#(clojure.set/difference %1 (clojure.set/difference %1 %2))
 
 ;;; GCD
 (fn [a b]
