@@ -147,7 +147,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;Exercise;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+(comment
 ; 1. Extend the full-moon-behavior multimethod to add behavior for your own kind
 ; of were-creature.
 
@@ -219,3 +219,19 @@
   (dotimes [n 5] (add java-seq n))
   (println java-seq)
   (size java-seq))
+
+; Exercise 4:
+; Create a role-playing game that implements behavior using multiple
+; dispatch
+(defmulti attack (fn [x] (:class x)))
+(defmethod attack :fighter
+  [character]
+  (str "Character " (:name character) " swings his " (:weapon character)))
+(defmethod attack :mage
+  [character]
+  (str "Character " (:name character) " casts " (:spell character)))
+
+(println (attack {:name "Tucker", :class :fighter, :weapon "sword"}))
+(println (attack {:name "Morphumax", :class :mage, :spell "magic missile"}))
+
+)
