@@ -4,7 +4,8 @@
 - [ ] Clojure uses software transactional memory (STM)
 - [ ] https://www.youtube.com/watch?v=f6kdp27TYZs
 - [ ] https://github.com/clojure/clojurescript.
-
+- [ ] http://clojure.org/java_interop#Java%20Interop-The%20Dot%20special%20form.
+- [ ] https://clojure.github.io/clojure/clojure.java.io-api.html
 ### Might be Useful
 
 ## License

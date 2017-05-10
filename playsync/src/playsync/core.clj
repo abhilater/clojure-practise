@@ -177,3 +177,12 @@
 (>!! in-chan "repaid")
 ; => DIAPER
   )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;JVM;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;1. The Java compiler reads source code.
+;2. The compiler outputs bytecode, often to a JAR file.
+;3. JVM executes the bytecode. (A running JVM executes bytecode by translating it on the fly into
+;   machine code that its host will understand, a process called just-in-time compilation.)
+;4. The JVM sends machine instructions to the CPU.
