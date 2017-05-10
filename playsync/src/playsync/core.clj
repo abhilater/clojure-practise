@@ -186,3 +186,8 @@
 ;3. JVM executes the bytecode. (A running JVM executes bytecode by translating it on the fly into
 ;   machine code that its host will understand, a process called just-in-time compilation.)
 ;4. The JVM sends machine instructions to the CPU.
+
+;; Leiningen, a Clojure build tool, has the concept of profiles. One thing profiles are useful for
+;; is allowing you to have development tools available to a project without having them as dependencies
+;; when you release your project. An example of when you might want to do this is when you are using a
+;; testing library like expectations.

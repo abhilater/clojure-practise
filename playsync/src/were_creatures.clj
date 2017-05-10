@@ -235,3 +235,47 @@
 (println (attack {:name "Morphumax", :class :mage, :spell "magic missile"}))
 
 )
+
+
+;; Artifact ecosystem isn’t an official programming term; I use it to refer to the suite
+;; of tools, resources, and conventions used to identify and distribute artifacts.
+;; Java’s ecosystem grew up around the Maven build tool, and because Clojure uses this
+;; ecosystem
+;;Maven specifies a pattern for identifying artifacts that Clojure projects adhere to,
+;; and it also specifies how to host these artifacts in Maven repositories, which are
+;; just servers that store artifacts for distribution.
+
+;;  group ID, an artifact ID, and a version
+
+;(defproject clojure-noob "0.1.0-SNAPSHOT"
+
+; clojure-noob is both the group ID and the artifact ID of your project, and
+; "0.1.0-SNAPSHOT" is its version
+
+;; In general, versions are permanent; if you deploy an artifact with version 0.1.0
+;; to a repository, you can’t make changes to the artifact and deploy it using the
+;; same version number. If you want to indicate that the version is a work in progress
+;; and you plan to keep updating it, you can append -SNAPSHOT to your version number
+
+;; TO separate groupId from artifactId
+;(defproject group-id/artifact-id "0.1.0-SNAPSHOT"
+
+;:dependencies [[org.clojure/clojure "1.7.0"]
+;               [clj-time "0.9.0"]]
+
+;; Add Java library dependency to leiningen dependency list
+;<dependency>
+;<groupId>org.apache.commons</groupId>
+;<artifactId>commons-email</artifactId>
+;<version>1.3.3</version>
+;</dependency>
+
+;:dependencies [[org.clojure/clojure "1.7.0"]
+;               [clj-time "0.9.0"]
+;               [org.apache.commons/commons-email "1.3.3"]]
+
+;The main Clojure repository is Clojars (https://clojars.org/), and the main Java
+; repository is The Central Repository (http://search.maven.org/),
+
+;To deploy your own projects to Clojars, all you have to do is create an account
+; there and run lein deploy clojars
