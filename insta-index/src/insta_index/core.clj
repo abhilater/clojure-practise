@@ -65,8 +65,6 @@
   (map #((apply comp normalizer-chain) %) token-list))
 
 
-
-
 (defn id->doc
   "Returns a doc id's doc"
   [doc-id]
@@ -103,8 +101,7 @@
     apply-normalizations
     gen-docid-freq-map-for-search
     get-docs-from-sorted-id-list
-    )
-  )
+    ))
 
 ;;; Best function I have created so far
 (defn update-inv-idx
@@ -140,11 +137,21 @@
         )
       id)
     (swap! doc-map assoc id doc)
+    (id->doc id)
     ))
+
+(defn create-doc
+  [text & id]
+  (if (empty? id)
+    (Document. (next-id in-mem-id-generator) text)
+    (Document. (first id) text)))
+
+
 
 (defn test-server
   []
-  "Success!")
+  ;(index-doc (create-doc "We are going to build a HUUUUUGEEE wall"))
+  {200 "Success!"})
 
 (comment
   ;;; tests the id-generator

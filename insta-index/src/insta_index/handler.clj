@@ -1,15 +1,10 @@
 (ns insta-index.handler
-  (:use compojure.core)
-  (:require [compojure.handler :as handler]
-            [clojure.core]
-            [insta-index.core :as service]))
+  (:require [ring.middleware.defaults :refer [wrap-defaults api-defaults]]
+            [ring.middleware.json :refer [wrap-json-body wrap-json-response]]
+            [insta-index.routes :refer [routes]]))
 
-(defn- str-to [num]
-  (apply str (interpose ", " (range 1 (inc num)))))
-
-(defn- str-from [num]
-  (apply str (interpose ", " (reverse (range 1 (inc num))))))
-
-(defroutes app
-           (GET "/search/:query" [query] (service/test-server))
-           (GET "/count-down/:from" [from] (str-from (Integer. from))))
+(def app
+  (-> routes
+      (wrap-json-body)
+      (wrap-json-response)
+      (wrap-defaults api-defaults)))
