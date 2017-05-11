@@ -12,6 +12,7 @@
 ### Might be Useful
 * http://stackoverflow.com/questions/19318977/difference-between-arrow-and-double-arrow-macros-in-clojure
 * https://learnxinyminutes.com/docs/compojure/
+* https://cognitect.com/events/webinars
 ## License
 
 Copyright © 2017 FIXME
