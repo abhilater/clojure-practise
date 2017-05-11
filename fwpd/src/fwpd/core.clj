@@ -435,3 +435,83 @@ into '()
                     (myiterate
                       f (f start-val)))))
 
+;;; #99 Product Digits
+(fn [a b]
+  (let [prod (* a b)]
+    (loop [p prod, res []]
+      (if (= p 0)
+        res
+        (recur (quot p 10) (cons (mod p 10) res))
+        )
+      )))
+
+(fn [x y]
+  (map #(- (int %) (int \0)) (seq (str (* x y)))))
+
+;;; #143 dot product
+(fn [l1 l2]
+  (loop [rl1 l1, rl2 l2, res 0]
+    (if (or (empty? rl1) (empty? rl2))
+      res
+      (recur
+        (rest rl1)
+        (rest rl2)
+        (+ (* (first rl1) (first rl2)) res)
+        ))))
+
+#(reduce + (map * %1 %2))
+
+#(->> (interleave %1 %2)
+      (partition 2)
+      (reduce (fn [agg x] (+ agg (apply * x))) 0))
+
+;;; #88 Symmetric Difference
+(fn [set1 set2]
+  (let [intersection (clojure.set/intersection set1 set2)]
+    (clojure.set/union
+      (clojure.set/difference
+        set1
+        intersection)
+      (clojure.set/difference
+        set2
+        intersection)
+      )))
+
+#(clojure.set/union (clojure.set/difference %1 %2) (clojure.set/difference %2 %1))
+
+#(->> (for [x (into %1 %2)
+            :when (not= (%1 x) (%2 x))] x)
+      (into #{}))
+
+;;; #90 Cartesian product
+(fn [set1 set2]
+  (loop [s1 set1, res #{}]
+    (if (empty? s1)
+      res
+      (recur
+        (rest s1)
+        (apply (partial conj res) (map (fn [it] [(first s1) it]) set2)))
+      )))
+#(set
+   (for[x %1, y %2]
+     [x y]))
+
+;;; #122 Read a binary number
+(fn [binary-str]
+  (loop [l (seq binary-str), order (dec (count l)), res 0]
+    (if (< order 0)
+      res
+      (recur (rest l)
+             (dec order)
+             (+ res  (if (= (first l) \1)
+                       (int (Math/pow 2 order))
+                       0))))))
+#(reduce
+   (fn [x y] (+ (* 2 x) y)) 0
+   (map
+     (fn [d] (- (int d) (int \0)))
+     (seq %)))
+
+(#(Integer/parseInt % 2) "111")
+
+
