@@ -515,3 +515,31 @@ into '()
 (#(Integer/parseInt % 2) "111")
 
 
+;;; #63 Group a sequence (implement group by)
+;(group-by #(> % 5) [1 3 6 8])
+;=> {false [1 3], true [6 8]}
+;(group-by #(mod % 2) [1 3 6 8])
+;=> {1 [1 3], 0 [6 8]}
+
+(fn [f list]
+  (reduce (fn [agg it]
+            (assoc agg
+              (f it)
+              (conj (vec (get agg (f it))) it)))  {} list))
+
+(fn [f col]
+  (reduce #(update-in
+             %1
+             [(f %2)]
+             (fn [v] (conj (or v []) %2)))         ;; best way to deal with key:list maps manipulation
+          {}
+          col))
+
+;;; #135 Infix Calculator
+;(= 42 (__ 38 + 48 - 2 / 2))
+(fn [& col]
+  (loop [rem col]
+    (if (<= (count rem) 1)
+      (first rem)
+      (recur (cons ((second rem) (first rem) (nth rem 2)) (drop 3 rem)))
+      )))
