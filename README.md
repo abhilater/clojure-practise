@@ -13,6 +13,10 @@
 * http://stackoverflow.com/questions/19318977/difference-between-arrow-and-double-arrow-macros-in-clojure
 * https://learnxinyminutes.com/docs/compojure/
 * https://cognitect.com/events/webinars
+
+### HBase
+* http://hbase.apache.org/book.html
+
 ## License
 
 Copyright © 2017 FIXME
