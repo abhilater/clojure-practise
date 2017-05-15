@@ -544,3 +544,150 @@ into '()
       (recur (cons ((second rem) (first rem) (nth rem 2)) (drop 3 rem)))
       )))
 
+;;; #157 Indexing a sequence
+(fn [col]
+  (reduce
+    #(conj %1 [%2 (inc (second (last %1)))])
+    [[(first col) 0]]
+    (rest col)))
+#(map vector % (range))
+
+;;; Pascal's triangle
+#(letfn[(factorial[n]
+          (apply * (range 1 (inc n))))
+        (binomial[n k]
+          (/ (factorial n) (* (factorial k) (factorial (- n k)))))]
+   (map (fn[col] (binomial (dec %) col)) (range %)))
+
+;;; Re-implement map
+(fn map- [f coll]
+  (lazy-seq
+    (when-let [s (seq coll)]
+      (cons (f (first s)) (map- f (rest s))))))
+
+(fn myMap [func coll]
+  (lazy-seq
+    (if (seq coll)
+      (cons (func (first coll)) (myMap func (rest coll))))))
+
+(fn ff [f xs]
+  (if (empty? xs)
+    xs
+    (lazy-seq (cons (f (first xs)) (ff f (drop 1 xs))))))
+
+(fn [col]
+  (let [sum-dig-sq (fn [n]
+                     (reduce +
+                             (map (fn [it]
+                                    (int (Math/pow it 2)))
+                                  (map #(- (int %) (int \0)) (seq (str n))))))]
+    (filter #(> (sum-dig-sq %) %) col)
+    ))
+
+;;; #120 Sum of square digits
+(fn [col]
+  (let [sum-dig-sq (fn [n]
+                     (reduce +
+                             (map (fn [it]
+                                    (int (Math/pow it 2)))
+                                  (map #(- (int %) (int \0)) (seq (str n))))))]
+    (count (filter #(> (sum-dig-sq %) %) col))
+    ))
+
+(fn [coll]
+  (let [sumOfSquaredComponent (->> coll
+                                   (map str)
+                                   (map seq)
+                                   (map #(map (fn [x] (- (int x) 48)) %))
+                                   (map #(map (fn [x] (* x x)) %))
+                                   (map #(reduce + %)))]
+    (count (filter true? (map > sumOfSquaredComponent coll)))))
+
+;;; #95 To Tree, or not to Tree
+(fn tree? [coll]
+  (cond
+    (or (seq? coll) (vector? coll))
+    (and (= 3 (count coll)) (tree? (nth coll 1)) (tree? (nth coll 2)))
+    (nil? coll) true
+    :else false))
+
+(fn tree? [coll]
+  (if (coll? coll)
+    (if (= (count coll) 3)
+      (and (tree? (second coll)) (tree? (last coll)))
+      false)
+    (nil? coll)))
+
+;;; #128 Recognie playing cards
+(fn [card]
+  (let [type {"D" :diamond "H" :heart "C" :club "S" :spade}
+        rank {"A" 12 "K" 11 "Q" 10 "J" 9 "T" 8}
+        t (first (map str (seq card)))
+        r (second (map str (seq card)))]
+    {:suit (get type t) :rank (if (contains? rank r) (get rank r) (- (Integer/parseInt r) 2))}
+    ))
+
+(fn [[s r]]
+  {:suit (condp = s
+           \D :diamond
+           \H :heart
+           \C :club
+           \S :spade)
+   :rank (condp = r
+           \A 12
+           \K 11
+           \Q 10
+           \J 9
+           \T 8
+           (- (int r) 50))})
+
+;;; #100 LCM
+(fn [& args]
+  (let [gcd (fn [a b] (if (zero? b) a (recur b (mod a b))))]
+    (/ (reduce * args) (reduce gcd args))))
+
+;;; #147 Pascal's trapezoid
+(fn [row]
+  (iterate #(map +' `(0 ~@%) `(~@% 0)) row))
+
+(fn pascalSeq [x]
+  (letfn[(nextPascal [coll]
+           (vec (map +' (cons 0 coll) (conj coll 0))))]
+    (lazy-seq
+      (let[nextX (nextPascal x)]
+        (cons x (pascalSeq nextX))))))
+
+;;; #96Beauty is Symmetry
+(fn [[v l r]]
+  (letfn [(mirror? [lb rb]
+            (cond
+              (not= (coll? lb) (coll? rb)) false
+              (and (coll? lb) (coll? lb)) (let [[lv ll lr] lb [rv rl rr] rb]
+                                            (and (= lv rv) (mirror? ll rr) (mirror? lr rl)))
+              :else (= lb rb))
+            )]
+    (mirror? l r)))
+
+;;; #153 Pairwise Disjoint Sets
+(fn [coll]
+  (loop [un #{(first coll)}, l (rest coll)]
+    (if (empty? (clojure.set/intersection un (first l)))
+      (if (not (empty? l))
+        (recur (clojure.set/union un (first l)) (rest l))
+        true)
+      false
+      )
+    ))
+
+;;; #146 Trees into tables
+(fn [coll]
+  (reduce (fn [acc it]
+            (let [k (first it) v (second it)]
+              (if (map? v)
+                (reduce #(assoc %1 [k (first %2)] (second %2)) acc v)
+                (assoc acc k v))
+              )) {} coll))
+#(reduce (partial apply assoc) {}
+         (for [keyVal %
+               value (second keyVal)]
+           (list [(first keyVal) (first value)] (second value))))
