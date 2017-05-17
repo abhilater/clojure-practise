@@ -225,7 +225,17 @@
 
 ;;; Problem 2
 ;The Caesar Cipher
-
+;
+;In our examples above, we used conj and + as reducing functions. Let’s write a more complex one.
+;
+;Given a string, use transducers to:
+;
+;Filter out vowels and non-ASCII characters
+;Filter out upper-case characters
+;Rotate all remaining characters via a Caesar cipher,
+;And reduce the rotated characters into a map counting the number of occurrences of each character.
+;Example:
+;
 ;(defn caesar-count
 ;  [string cipher]
 ;  ???)
@@ -275,7 +285,12 @@
   (transduce (caesar-xform cipher) caesar-reducing {} string)
   )
 
-
+(comment
+(caesar-count "hello world" 13)
+;=> {\u 1, \y 3, \j 1, \e 1, \q 1}
+(caesar-count "abc" 1)
+;=> {\c 1, \d 1})
+)
 
 ;(def valid-chars (into #{} conj "bcdfghjklmnpqrstvwxyz"))
 ;
