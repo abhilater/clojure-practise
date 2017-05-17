@@ -178,6 +178,52 @@
 ; => DIAPER
   )
 
+
+;;; Transducers
+(defn mapping [f]
+  (fn [reducing]
+    (fn [result input]
+      (reducing result (f input)))))
+
+(defn filtering [predicate]
+  (fn [reducing]
+    (fn [result input]
+      (if (predicate input)
+        (reducing result input)
+        result))))
+
+(reduce ((filtering even?) conj)
+        []
+        (reduce ((mapping inc) conj) [] (range 10)))
+
+(def xform
+  (comp
+    (mapping inc)
+    (filtering even?)))
+
+(reduce (xform conj) [] (range 10))
+
+(defn xtransduce
+  [xf reducing result sequence]
+  (reduce (xf reducing) result sequence))
+
+(defn square [x] (* x x))
+(def xform2
+  (comp
+    (filter even?)
+    (filter #(< % 10))
+    (map square)
+    (map inc)))
+
+(def my-chan (chan 1 xform2))
+
+(go (while true
+      (println (<! my-chan))))
+
+
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;JVM;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
