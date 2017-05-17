@@ -180,12 +180,14 @@
 
 
 ;;; Transducers
-(defn mapping [f]
+(defn mapping
+  [f]
   (fn [reducing]
     (fn [result input]
       (reducing result (f input)))))
 
-(defn filtering [predicate]
+(defn filtering
+  [predicate]
   (fn [reducing]
     (fn [result input]
       (if (predicate input)
@@ -203,6 +205,7 @@
 
 (reduce (xform conj) [] (range 10))
 
+;;; Problem 1
 (defn xtransduce
   [xf reducing result sequence]
   (reduce (xf reducing) result sequence))
@@ -219,6 +222,89 @@
 
 (go (while true
       (println (<! my-chan))))
+
+;;; Problem 2
+;The Caesar Cipher
+
+;(defn caesar-count
+;  [string cipher]
+;  ???)
+;
+;(caesar-count "abc" 0)
+;; ⇒ {\c 1, \b 1}
+;
+;(caesar-count "abc" 1)
+;; ⇒ {\d 1, \c 1}
+;
+;(caesar-count "hello world" 0)
+;; ⇒ {\d 1, \r 1, \w 1, \l 3, \h 1}
+;
+;(caesar-count "hello world" 13)
+;; ⇒ {\q 1, \e 1, \j 1, \y 3, \u 1}
+
+(defn rotate [cipher]
+  (fn [c]
+    (let [base-c (- (int c) 97)
+          rotated-c (mod (+ base-c cipher) 26)]
+      (char (+ rotated-c 97)))))
+
+(defn caesar-xform
+  [cipher]
+  (comp
+    (map int)
+    ; only small aplphabets
+    (filter #(and (<= % 122) (>= % 97)))
+    ; not vowels
+    (filter #(not (or (= % 97) (= % 101) (= % 105) (= % 111) (= % 117))))
+    (map (rotate cipher))
+    ))
+
+(defn caesar-reducing
+  ([]
+   [])
+  ([result]
+   result)
+  ([result input] (update-in result (str input) (fnil inc 0)))
+  ; (fnil + 0) replaces use of #(+ (or % 0) 1), for when the key does not exist
+  ; yet (and thus value is nil)
+  )
+
+(defn caesar-count
+  [string cipher]
+  ;(transduce (caesar-xform cipher) caesar-reducing {} string)
+  (transduce (caesar-xform cipher) caesar-reducing {} string)
+  )
+
+
+
+;(def valid-chars (into #{} conj "bcdfghjklmnpqrstvwxyz"))
+;
+;;; ASCII lower case characters range from 97 to 122
+;(defn rotate [cipher]
+;  (fn [c]
+;    (let [base-c (- (int c) 97)
+;          rotated-c (mod (+ base-c cipher) 26)]
+;      (char (+ rotated-c 97)))))
+;
+;(defn caesar-reducing
+;  [result input]
+;  ; (fnil + 0) replaces use of #(+ (or % 0) 1), for when the key does not exist
+;  ; yet (and thus value is nil)
+;  (update-in result (str input) (fnil inc 0)))
+;
+;(defn caesar-xform
+;  [cipher]
+;  (comp
+;    (filtering valid-chars)
+;    (filtering (comp not #(Character/isUpperCase %)))
+;    (mapping (rotate cipher))))
+;
+;(defn caesar-count
+;  [string cipher]
+;  (transduce (caesar-xform cipher) caesar-reducing {} string))
+
+
+
 
 
 
