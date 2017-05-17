@@ -50,3 +50,16 @@
           (partition 2 (interleave (map type coll) coll)))))))
 
 #(->> % (group-by type) (vals))
+
+;;; Count Occurrences #55
+(defn count-freq
+  [coll]
+  (->> coll
+       (group-by identity)
+       (map (fn [ent]
+              (vector (first ent) (count (second ent)))))
+       (into {})
+       ))
+
+
+

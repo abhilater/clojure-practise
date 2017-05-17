@@ -20,3 +20,9 @@
     (is (= '((0 3 6) (1 4 7) (2 5 8)) (rev-interleave (range 9) 3)))
   ))
 
+(deftest test-count-freq
+  (testing "count-freq"
+    (is (= (count-freq [1 1 2 3 2 1 1]) {1 4, 2 2, 3 1}))
+    (is (= (count-freq [:b :a :b :a :b]) {:a 2, :b 3}))
+    (is (= (count-freq '([1 2] [1 3] [1 3])) {[1 2] 1, [1 3] 2}))
+    ))
