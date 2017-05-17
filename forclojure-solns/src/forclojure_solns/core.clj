@@ -61,5 +61,40 @@
        (into {})
        ))
 
+;;; Distinct numbers in list
+(defn xdistinct
+  [coll]
+  (loop [res []
+         map (group-by identity coll)
+         rem coll
+         ]
+    (if (empty? rem)
+      res
+      (recur (if (contains? map (first rem))
+               (conj res (first rem))
+               res)
+             (dissoc map (first rem))
+             (rest rem))
+      )))
 
+;;; Function Composition #58
+; (= [3 2 1] ((__ rest reverse) [1 2 3 4]))
+; (= 5 ((__ (partial + 3) second) [1 2 3 4]))
+; (= true ((__ zero? #(mod % 8) +) 3 5 7 9))
+; (= "HELLO" ((__ #(.toUpperCase %) #(apply str %) take) 5 "hello world"))
 
+(defn xcomp
+  [& f]
+  (fn [& args]
+    (loop [rem (reverse f), res args]
+      (if (empty? rem)
+        (first res)
+        (recur (rest rem) [(apply (first rem) res)])
+        )
+      )))
+
+;;; Map Defaults #156
+; (= (__ 0 [:a :b :c]) {:a 0 :b 0 :c 0})
+; (= (__ "x" [1 2 3]) {1 "x" 2 "x" 3 "x"})
+; (= (__ [:a :b] [:foo :bar]) {:foo [:a :b] :bar [:a :b]})
+#(into {} (map vec (partition 2 (interleave %2 (repeat %1)))))
