@@ -10,6 +10,7 @@
 - [ ] https://github.com/technomancy/leiningen/blob/stable/doc/TUTORIAL.md
 - [X] Cursive Debugging https://www.youtube.com/watch?v=ql77RwhcCK0
 - [X] Transducers http://elbenshira.com/blog/understanding-transducers/
+- [X] https://cb.codes/improve-rapidly-at-any-programming-language/
 
 ### Might be Useful
 * http://stackoverflow.com/questions/19318977/difference-between-arrow-and-double-arrow-macros-in-clojure
