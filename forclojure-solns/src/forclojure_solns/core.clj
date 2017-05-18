@@ -194,3 +194,77 @@
        (filter #(== (Math/pow (int (Math/sqrt %)) 2) %))
        (clojure.string/join ",")))
 
+
+;;; Anagram Finder #77
+; (= (__ ["meat" "mat" "team" "mate" "eat"])
+; #{#{"meat" "team" "mate"}})
+; (= (__ ["veer" "lake" "item" "kale" "mite" "ever"])
+; #{#{"veer" "ever"} #{"lake" "kale"} #{"mite" "item"}})
+
+(defn anagram-finder
+  [coll]
+  (into #{} (->> coll
+                 (reduce (fn [acc item]
+                           (update-in acc [(apply str (sort item))] conj item)) {})
+                 (filter #(> (count (second %)) 1))
+                 (map #(second %))
+                 (map set))))
+
+#(->> (group-by sort %)
+      (vals)
+      (map set)
+      (filter (comp seq rest))
+      (set))
+
+;;; Perfect Numbers #80
+; (= (__ 6) true) 1+2+3=6.
+; (= (__ 7) false)
+
+(defn perfect-no?
+  [num]
+  (->> (range 1 num)
+       (filter #(zero? (rem num %)))
+       (reduce +)
+       (= num)))
+
+;;; Merge with a Function #69
+; (= (__ * {:a 2, :b 3, :c 4} {:a 2} {:b 2} {:c 5})
+;{:a 4, :b 6, :c 20})
+; (= (__ - {1 10, 2 20} {1 3, 2 10, 3 15})
+;{1 7, 2 10, 3 15})
+
+(defn xmerge-with
+  [f & maps]
+  (reduce (fn [acc item]
+            (reduce (fn [inacc initem]
+                      (if (contains? inacc (first initem))
+                        (update-in inacc [(first initem)] f (second initem))
+                        (assoc inacc (first initem) (second initem)))) acc item))
+          {} maps))
+
+;;; intoCamelCase #102
+; (= (__ "multi-word-key") "multiWordKey")
+; (= (__ "leaveMeAlone") "leaveMeAlone")
+(defn to-camel-case
+  [string]
+  (let [coll (re-seq #"\w+" string)]
+    (if (> (count coll) 1)
+      (apply str
+        (cons (first coll) (map clojure.string/capitalize (rest coll))))
+      (apply str coll)
+      )))
+
+;The trampoline function takes a function f and a variable number of parameters.
+;Trampoline calls f with any parameters that were supplied. If f returns a function,
+;trampoline calls that function with no arguments. This is repeated, until the return
+;value is not a function, and then trampoline returns that non-function value. This is
+;useful for implementing mutually recursive algorithms in a way that won't consume the
+;stack. test not run
+
+(= [1 3 5 7 9 11]
+   (letfn
+     [(foo [x y] #(bar (conj x y) y))
+      (bar [x y] (if (> (last x) 10)
+                   x
+                   #(foo x (+ 2 y))))]
+     (trampoline foo [] 1)))
