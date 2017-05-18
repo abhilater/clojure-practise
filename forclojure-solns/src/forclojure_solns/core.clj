@@ -170,3 +170,18 @@
   (sort
     #(compare (.toLowerCase %1) (.toLowerCase %2))
     (clojure.string/split string #"\W")))
+
+;;; Prime Numbers #67 (have made it lazy)
+(defn n-primes
+  []
+  (filter (fn [num]
+            (loop [end (int (Math/sqrt num)), div 2, re (rem num div)]
+              (cond
+                (< num 2) false
+                (= num 2) true
+                (= re 0) false
+                (> div end) true
+                :else (recur end (inc div) (rem num div)))
+              )) (range)))
+
+;; Usage (take 5 (n-primes))
