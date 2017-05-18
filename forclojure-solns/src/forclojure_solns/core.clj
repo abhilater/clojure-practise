@@ -98,3 +98,29 @@
 ; (= (__ "x" [1 2 3]) {1 "x" 2 "x" 3 "x"})
 ; (= (__ [:a :b] [:foo :bar]) {:foo [:a :b] :bar [:a :b]})
 #(into {} (map vec (partition 2 (interleave %2 (repeat %1)))))
+
+
+;;; Sequence Reductionns #60
+; (= (take 5 (__ + (range))) [0 1 3 6 10])
+; (= (__ conj [1] [2 3 4]) [[1] [1 2] [1 2 3] [1 2 3 4]])
+; (= (last (__ * 2 [3 4 5])) (reduce * 2 [3 4 5]) 120)
+(defn xreductions
+  ([f seq] (xreductions f (first seq) (rest seq)))
+  ([f firstarg seq]
+    (letfn [(reduct [f acc se]
+              (lazy-seq (when-not (empty? se)
+                          (let [res (f acc (first se))]
+                            (cons res (reduct f res (rest se)))))))]
+      (lazy-seq (cons firstarg (reduct f firstarg seq)))
+      ;; you can also not call lazy-seq but need it
+      ;;You would need to wrap it only in case you need to call realized? on it.
+      )))
+;=> (source iterate)
+;In addi­tion, one can gen­er­ate lazy sequences from scratch using the lazy-seq macro.
+;This macro takes a form which gen­er­ates a sequences and wraps it in a func­tion which
+;is used as the tail of a lazy sequence. You can recur­sively gen­er­ate a lazy
+;sequence then, with a recur­sive func­tion that wraps it’s body in a call to lazy-seq. For example:
+
+;(defn iterate
+;  "Returns a lazy sequence of x, (f x), (f (f x)) etc. f must be free of side-effects"
+;  [f x] (cons x (lazy-seq (iterate f (f x)))))
