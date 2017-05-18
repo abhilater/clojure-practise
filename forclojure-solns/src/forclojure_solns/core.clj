@@ -107,14 +107,14 @@
 (defn xreductions
   ([f seq] (xreductions f (first seq) (rest seq)))
   ([f firstarg seq]
-    (letfn [(reduct [f acc se]
-              (lazy-seq (when-not (empty? se)
-                          (let [res (f acc (first se))]
-                            (cons res (reduct f res (rest se)))))))]
-      (lazy-seq (cons firstarg (reduct f firstarg seq)))
-      ;; you can also not call lazy-seq but need it
-      ;;You would need to wrap it only in case you need to call realized? on it.
-      )))
+   (letfn [(reduct [f acc se]
+             (lazy-seq (when-not (empty? se)
+                         (let [res (f acc (first se))]
+                           (cons res (reduct f res (rest se)))))))]
+     (lazy-seq (cons firstarg (reduct f firstarg seq)))
+     ;; you can also not call lazy-seq but need it
+     ;;You would need to wrap it only in case you need to call realized? on it.
+     )))
 ;=> (source iterate)
 ;In addi­tion, one can gen­er­ate lazy sequences from scratch using the lazy-seq macro.
 ;This macro takes a form which gen­er­ates a sequences and wraps it in a func­tion which
@@ -124,3 +124,49 @@
 ;(defn iterate
 ;  "Returns a lazy sequence of x, (f x), (f (f x)) etc. f must be free of side-effects"
 ;  [f x] (cons x (lazy-seq (iterate f (f x)))))
+
+
+;;; Partition a Sequence #54
+(defn xpartition [n seq]
+  (loop [rem seq, res [], part []]
+    ;(println rem "," res "," part ",")
+    (if (empty? rem)
+      ; if
+      (if (= (count part) n)
+        (conj res part)
+        res)
+      ; else
+      (if (= (count part) n)
+        (recur (rest rem) (conj res part) [(first rem)])
+        (recur (rest rem) res (conj part (first rem))))
+      )))
+
+;;; Juxtaposition #59
+(defn xjuxt [& fs]
+  (fn [& args]
+    (reduce #(conj %1 (apply %2 args)) [] fs)
+    ))
+
+(fn myJuxt [& fs]
+  (fn [& args]
+    (for [f fs]
+      (apply f args))))
+
+;;; Word Sorting # 70
+(defn word-sort [sentence]
+  (sort-by #(.toLowerCase %)
+           (clojure.string/split (->>
+                                   (seq sentence)
+                                   (map int)
+                                   (filter #(or (and (>= % 97) (<= % 122)) (and (>= % 65) (<= % 122)) (= % 32)))
+                                   (map char)
+                                   (apply str)
+                                   ) #" ")))
+
+#(->> (re-seq #"\w+" %)
+      (sort-by clojure.string/lower-case))
+
+(fn [string]
+  (sort
+    #(compare (.toLowerCase %1) (.toLowerCase %2))
+    (clojure.string/split string #"\W")))
