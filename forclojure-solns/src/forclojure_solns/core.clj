@@ -185,3 +185,12 @@
               )) (range)))
 
 ;; Usage (take 5 (n-primes))
+
+;;; Filter Perfect Squares #74
+(defn filter-perf-sq
+  [input-str]
+  (->> (re-seq #"\d+" input-str)
+       (map #(Integer/parseInt %))
+       (filter #(== (Math/pow (int (Math/sqrt %)) 2) %))
+       (clojure.string/join ",")))
+
