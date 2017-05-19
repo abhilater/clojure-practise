@@ -17,8 +17,7 @@
          (split-at times)
          (map reverse)
          flatten
-         reverse
-         )))
+         reverse)))
 
 ;;; Reverse Interleave #42
 ;(= (__ [1 2 3 4 5 6] 2) '((1 3 5) (2 4 6)))
@@ -32,8 +31,7 @@
       (recur
         (rest rem)
         (update-in acc [(mod idx n)] #(conj (or % []) (first rem)))
-        (inc idx)
-        ))))
+        (inc idx)))))
 
 ;;; Split by Type #50
 ; (= (set (__ [1 :a 2 :b 3 :c])) #{[1 2 3] [:a :b :c]})
@@ -58,8 +56,7 @@
        (group-by identity)
        (map (fn [ent]
               (vector (first ent) (count (second ent)))))
-       (into {})
-       ))
+       (into {})))
 
 ;;; Distinct numbers in list
 (defn xdistinct
@@ -74,8 +71,7 @@
                (conj res (first rem))
                res)
              (dissoc map (first rem))
-             (rest rem))
-      )))
+             (rest rem)))))
 
 ;;; Function Composition #58
 ; (= [3 2 1] ((__ rest reverse) [1 2 3 4]))
@@ -250,9 +246,8 @@
   (let [coll (re-seq #"\w+" string)]
     (if (> (count coll) 1)
       (apply str
-        (cons (first coll) (map clojure.string/capitalize (rest coll))))
-      (apply str coll)
-      )))
+             (cons (first coll) (map clojure.string/capitalize (rest coll))))
+      (apply str coll))))
 
 ;The trampoline function takes a function f and a variable number of parameters.
 ;Trampoline calls f with any parameters that were supplied. If f returns a function,
@@ -283,9 +278,7 @@
       (cond
         (= sum-digit 1) true
         (contains? xset sum-digit) false
-        :else (recur (conj xset sum-digit) (sum-digit-sqrs sum-digit))
-        )
-    )))
+        :else (recur (conj xset sum-digit) (sum-digit-sqrs sum-digit))))))
 
 ;;; The Balance of N #115
 ; (= true (__ 11))
@@ -294,10 +287,72 @@
 ; (= true (__ 0))
 (defn balanced? [num]
   (let [list (->> (seq (str num))
-                   (map #(Integer/parseInt (str %))))
+                  (map #(Integer/parseInt (str %))))
         cnt (count list)
         split (split-at (quot cnt 2) list)]
     (if (odd? cnt)
       (= (reduce + (first split)) (reduce + (rest (second split))))
-      (= (reduce + (first split)) (reduce + (second split)))
-      )))
+      (= (reduce + (first split)) (reduce + (second split))))))
+
+;;; Power Set #85
+; (= (__ #{}) #{#{}})
+; (= (__ #{1 :a}) #{#{1 :a} #{:a} #{} #{1}})
+; (= (__ #{1 2 3})
+;#{#{} #{1} #{2} #{3} #{1 2} #{1 3} #{2 3} #{1 2 3}})
+(defn powerset [input-set]
+  (let [ve (vec input-set)
+        cnt (count ve)
+        end (int (Math/pow 2 cnt))
+        ]
+    (if (= cnt 0)
+      #{#{}}
+      (loop [idx 0
+             bitstr (Integer/toBinaryString idx)
+             result #{}]
+        (if (= idx end)
+          result
+          (recur (inc idx)
+                 (Integer/toBinaryString (inc idx))
+                 (conj
+                   result
+                   ((fn [v bitv]
+                      (set
+                        (map first
+                             (filter #(= (second %) "1")
+                                     (map #(vector %1 %2) v bitv))))) ve
+                     (map str (format (str "%0" cnt "d") (Integer/parseInt bitstr)))))))))))
+
+;;; Equivalence Classes #98
+(defn equivalence-classes [f D]
+  (->> D
+       (map #(vector (f %) %))
+       (group-by first)
+       vals
+       (map (fn [group] (map second group)))
+       (map set)
+       set))
+
+;;; Identify keys and values #105
+; (= {} (__ []))
+; (= {:a [1]} (__ [:a 1]))
+; (= {:a [1 2 3], :b [], :c [4]} (__ [:a 1 2 3 :b :c 4]))
+(defn id-key-val [coll]
+  (letfn [(take-next-num-seq [seq]
+            (take-while (comp not keyword?) seq))
+          (drop-next-num-seq [seq]
+            (drop-while (comp not keyword?) seq))]
+    (loop [res {}, rem coll]
+      (if (empty? rem)
+        res
+        (recur (assoc res (first rem) (take-next-num-seq (rest rem)))
+               (drop-next-num-seq (rest rem)))))))
+
+#(->> (partition-by keyword? %)
+      (partition 2)
+      (reduce (fn [agg [k v]]
+                (-> (zipmap (reverse k) (cons v (repeat ())))
+                    (into agg))) {}))
+
+
+
+
