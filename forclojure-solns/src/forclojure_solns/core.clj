@@ -268,3 +268,36 @@
                    x
                    #(foo x (+ 2 y))))]
      (trampoline foo [] 1)))
+
+;;; Happy numbers #86
+; (= (__ 7) true)
+; (= (__ 2) false)
+(defn happy-no [num]
+  (letfn [(sum-digit-sqrs [n]
+            (->> (str n)
+                 seq
+                 (map #(int (Math/pow (Integer/parseInt (str %)) 2)))
+                 (reduce +)))]
+    (loop [xset #{}, sum-digit (sum-digit-sqrs num)]
+      ;(println "xset: " xset "sum-digit: " sum-digit)
+      (cond
+        (= sum-digit 1) true
+        (contains? xset sum-digit) false
+        :else (recur (conj xset sum-digit) (sum-digit-sqrs sum-digit))
+        )
+    )))
+
+;;; The Balance of N #115
+; (= true (__ 11))
+; (= true (__ 121))
+; (= false (__ 123))
+; (= true (__ 0))
+(defn balanced? [num]
+  (let [list (->> (seq (str num))
+                   (map #(Integer/parseInt (str %))))
+        cnt (count list)
+        split (split-at (quot cnt 2) list)]
+    (if (odd? cnt)
+      (= (reduce + (first split)) (reduce + (rest (second split))))
+      (= (reduce + (first split)) (reduce + (second split)))
+      )))
