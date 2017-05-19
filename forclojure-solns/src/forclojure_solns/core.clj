@@ -350,6 +350,49 @@
                 (-> (zipmap (reverse k) (cons v (repeat ())))
                     (into agg))) {}))
 
+(def acc (atom 0))
+;;; Sequs Horribilis #112
+; (=  (__ 10 [1 2 [3 [4 5] 6] 7])
+;'(1 2 (3 (4))))
+; (=  (__ 30 [1 2 [3 [4 [5 [6 [7 8]] 9]] 10] 11])
+;'(1 2 (3 (4 (5 (6 (7)))))))
+;(=  (__ 1 [[[[[1]]]]])
+;'(((((1))))))
 
+(defn seq-horrib [coll]
+  (if (coll? coll)
+    (map seq-horrib coll)
+    (do (swap! acc + coll) coll)))
 
+((fn ff [sum [h & tail :as col]]
+   (println h " : " tail " : " col)
+   (cond (or (empty? col)
+             (and (integer? h) (< (- sum h) 0))) ()
+         (sequential? h) (let [x (ff sum h)]
+                           (cons x (ff (- sum (apply + (flatten x))) tail)))
+         :else (cons h (ff (- sum h) tail)))) 10 [1 2 [3 [4] 5] 6])
 
+#(letfn [(sequs [bound coll]
+           (loop [result [0 []] remaining coll];initially sum is zero and structure is empty
+             (if-let [item (first remaining)]
+               (if (coll? item)
+                 (let [[subSum subSeq] (sequs (- bound (first result)) item)];if one item is a collection, then compute then sum from that collection
+                   (recur [(+ (first result) subSum) (conj (second result) subSeq)];and go onto the next item
+                          (rest remaining)))
+                 (if (> (+ item (first result)) bound) result;if sum exceeds the bound then return
+                                                       (recur [(+ item (first result)) (conj (second result) item)];else continue the loop
+                                                              (rest remaining))))
+               result)))]
+   (second (sequs %1 %2)))
+
+(fn [n s]
+  (second
+    ((fn sequs [n s]
+       (loop [cnt 0 acc [] [x & xs] s]
+         (cond
+           (or (nil? x) (< n cnt)) [cnt acc]
+           (coll? x) (let [[c r] (sequs (- n cnt) x)
+                           coll (if (empty? r) acc (conj acc r))]
+                       (recur (+ c cnt) coll xs))
+           :else (recur (+ x cnt) (if (< n (+ cnt x)) acc (conj acc x)) xs))))
+      n s)))
