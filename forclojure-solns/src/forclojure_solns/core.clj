@@ -86,8 +86,7 @@
       (if (empty? rem)
         (first res)
         (recur (rest rem) [(apply (first rem) res)])
-        )
-      )))
+        ))))
 
 ;;; Map Defaults #156
 ; (= (__ 0 [:a :b :c]) {:a 0 :b 0 :c 0})
@@ -107,10 +106,10 @@
              (lazy-seq (when-not (empty? se)
                          (let [res (f acc (first se))]
                            (cons res (reduct f res (rest se)))))))]
-     (lazy-seq (cons firstarg (reduct f firstarg seq)))
-     ;; you can also not call lazy-seq but need it
-     ;;You would need to wrap it only in case you need to call realized? on it.
-     )))
+     (lazy-seq (cons firstarg (reduct f firstarg seq))))))
+;; you can also not call lazy-seq but need it
+;;You would need to wrap it only in case you need to call realized? on it.
+
 ;=> (source iterate)
 ;In addi­tion, one can gen­er­ate lazy sequences from scratch using the lazy-seq macro.
 ;This macro takes a form which gen­er­ates a sequences and wraps it in a func­tion which
@@ -134,14 +133,12 @@
       ; else
       (if (= (count part) n)
         (recur (rest rem) (conj res part) [(first rem)])
-        (recur (rest rem) res (conj part (first rem))))
-      )))
+        (recur (rest rem) res (conj part (first rem)))))))
 
 ;;; Juxtaposition #59
 (defn xjuxt [& fs]
   (fn [& args]
-    (reduce #(conj %1 (apply %2 args)) [] fs)
-    ))
+    (reduce #(conj %1 (apply %2 args)) [] fs)))
 
 (fn myJuxt [& fs]
   (fn [& args]
