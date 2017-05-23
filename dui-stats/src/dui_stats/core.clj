@@ -137,6 +137,82 @@
 ;  ["NM, Dona Ana" 9.980635E-4 201 201390]
 ;  ["NV, Carson City" 7.732528E-4 42 54316])
 
+;; 100 primes
+;; 4. Find the first 100 prime numbers: 2, 3, 5, 7, 11, 13, 17, ....
+(def prime-nums
+  ((fn get-primes [primes sieve]
+     (lazy-seq
+       (let [d (first sieve)
+             r (filter #(pos? (mod % d)) (rest sieve))]
+         (cons d (get-primes primes r)))))
+    [] (drop 2 (range))))
+
+(take 10 prime-nums)
+
+; Using the control flow constructs we’ve learned, write a schedule function which, given an hour of the day,
+; returns what you’ll be doing at that time. (schedule 18), for me, returns :dinner.
+(defn schedule [hour]
+  (condp < hour
+    6     :sleep
+    8     :getting-ready-and-breakfast
+    9     :commute
+    18    :office-work
+    19    :commute
+    20    :home-dinner
+    22    :learn-new-stuff
+    :else :sleep))
+
+;Using the threading macros, find how many numbers from 0 to 9999 are palindromes:
+; identical when written forwards and backwards. 121 is a palindrome, as is 7447 and
+; 5, but not 12 or 953.
+
+
+(defn how-many-palin [num]
+  (->> (range num)
+       (map str)
+       (filter #(= (seq %) (reverse %)))
+       count))
+
+(defmacro id [f & args]
+  `(~f ~@args))
+
+;Write a macro log which uses a var, logging-enabled, to determine whether or not
+; to print an expression to the console at compile time. If logging-enabled is false,
+; (log :hi) should macroexpand to nil. If logging-enabled is true, (log :hi) should
+; macroexpand to (prn :hi). Why would you want to do this
+; check during compilation, instead of when running the program? What might you lose?
+(def logging-enabled false)
+(defmacro log [line]
+  `(if ~logging-enabled (prn ~line) nil))
+
+;; 5. (Advanced) Using the rationalize function, write a macro exact which rewrites any
+;; use of +, -, *, or / to force the use of ratios instead of floating-point numbers.
+;; (* 2452.45 100) returns 245244.99999999997, but (exact (* 2452.45 100)) should
+;; return 245245N
+
+(defmacro exact [[op & args]]
+  `(~op ~@(map rationalize args)))
+
+;; 1. Use delay to compute this sum lazily; show that it takes no time to return
+;; the delay, but roughly 1 second to deref.
+(defn sum [start end]
+  (reduce + (range start end)))
+
+(def delayed-result (delay (sum 0 1e7)))
+(time (deref delayed-result))
+
+;; 2. We can do the computation in a new thread directly, using
+;; (.start (Thread. (fn [] (sum 0 1e7)))–but this simply runs the (sum) function
+;; and discards the results. Use a promise to hand the result back out of
+;; the thread. Use this technique to write your own version of the future macro.
+(defn sum2 [start end]
+  (let [result (promise)]
+    (.start (Thread. (fn [] (deliver result (sum start end)))))
+    result))
+
+(def promised-result (sum2 0 1e7))
+(time (deref promised-result))
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
