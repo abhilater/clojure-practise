@@ -225,6 +225,37 @@
 (time (split-sum))
 (time (sum 0 1e7))
 
+;; 4. Instead of using reduce, store the sum in an atom and use two futures to
+;; add each number from the lower and upper range to that atom. Wait for both
+;; futures to complete using deref, then check that the atom contains the right
+;; number. Is this technique faster or slower than reduce? Why do you think that
+;; might be?
+(defn sum-without-reduce [start end]
+  (let [sum-atom (atom 0)
+        mid (/ end 2)
+        first-range (range start mid)
+        sec-range (range mid end)
+        first-sum (future (doseq [item first-range] (swap! sum-atom + item)))
+        sec-sum (future (doseq [item sec-range] (swap! sum-atom + item)))]
+    (do (deref first-sum) (deref sec-sum))
+    (deref sum-atom)))
+(time (sum-without-reduce 0 1e7))
+
+(def work (ref (apply list (range 1e5))))
+(def sum (ref 0))
+(defn add-next []
+  (dosync
+    (if-let [item (seq (take 1 (ensure work)))]
+      (do
+        (commute sum + (first item))
+        (commute work #(drop 1 %)))
+      nil)))
+
+(defn add-all []
+  (let [f1 (future (loop [res (add-next)] (when res (recur (add-next)))))
+        f2 (future (loop [res (add-next)] (when res (recur (add-next)))))]
+    (do (deref f1) (deref f2))
+    @sum))
 
 (defn -main
   "I don't do a whole lot ... yet."
