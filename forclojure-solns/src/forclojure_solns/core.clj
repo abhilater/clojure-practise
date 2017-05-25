@@ -379,3 +379,68 @@
                            (rest rem))))
                 res)))]
     (second (seq-horrib max coll))))
+
+;; Euler's Totient Function #75
+(defn euler-tot [num]
+  (let [gcd (fn [a b]
+              (if (= a 0) b (recur (mod b a) a)))]
+    (loop [res 1, rem (range 2 num)]
+      (if (empty? rem)
+        res
+        (recur (if (= 1 (gcd (first rem) num)) (inc res) res)
+               (rest rem))))))
+
+;; Balancing Brackets #177
+;(__ "This string has no brackets.")
+;(__ "class Test {
+;      public static void main(String[] args) {
+;        System.out.println(\"Hello world.\");
+;      }
+;    }")
+;(not (__ "(start, end]"))
+;(not (__ "())"))
+
+(defn balanced-bracks? [str]
+  (let [s (java.util.Stack.)
+        inval? (fn [c]
+                 (cond
+                   (or (= c \()
+                       (= c \{)
+                       (= c \[)) (not (.push s c))
+                   (= c \)) (if (or (.isEmpty s) (not= (.peek s) \())
+                              true
+                              (not (.pop s)))
+                   (= c \]) (if (or (.isEmpty s) (not= (.peek s) \[))
+                              true
+                              (not (.pop s)))
+                   (= c \}) (if (or (.isEmpty s) (not= (.peek s) \{))
+                              true
+                              (not (.pop s)))
+                   :else false))]
+    (loop [invalid false, rem (seq str)]
+      (if invalid
+        false
+        (if (empty? rem)
+          (if (not (.isEmpty s))
+            false
+            true)
+          (recur (inval? (first rem)) (rest rem)))))))
+
+;;Reimplement Trampoline #78
+(defn xtramp [f & args]
+  (let [res (apply f args)]
+    (if (fn? res)
+      (xtramp res)
+      res)))
+
+;; Sequence of pronunciations #110
+; (= [[1 1] [2 1] [1 2 1 1]] (take 3 (__ [1])))
+; (= [3 1 2 4] (first (__ [1 1 1 4 4])))
+; (= [1 1 1 3 2 1 3 2 1 1] (nth (__ [1]) 6))
+
+(defn pronoun-seq [coll]
+  (let [ps (fn [coll]
+             (->> coll
+                  (partition-by identity)
+                  (mapcat (fn [it] [(count it) (first it)]))))]
+    (lazy-seq (cons (ps coll) (pronoun-seq (ps coll))))))

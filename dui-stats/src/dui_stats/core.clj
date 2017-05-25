@@ -270,6 +270,20 @@
     (do (deref f1) (deref f2))
     @sum))
 
+
+(def receiver-a (ref #{}))
+(def receiver-b (ref #{}))
+(def giver (ref #{1}))
+(do (future (dosync (let [gift (first (ensure giver))]
+                      (Thread/sleep 10)
+                      (commute receiver-a conj gift)
+                      (commute giver disj gift))))
+    (future (dosync (let [gift (first (ensure giver))]
+                      (Thread/sleep 50)
+                      (commute receiver-b conj gift)
+                      (commute giver disj gift)))))
+
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
