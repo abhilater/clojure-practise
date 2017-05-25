@@ -213,6 +213,19 @@
 (def promised-result (sum2 0 1e7))
 (time (deref promised-result))
 
+;; Custom future macro
+(defmacro my-future [& body]
+  `(do
+     (let [x# (promise)]
+       (.start
+         (Thread.
+           (fn [] (deliver x# (do ~@body)))))
+       x#)))
+
+(def x (my-future (do (Thread/sleep 10000)
+                      (reduce + (range 1e7)))))
+
+
 ;; If your computer has two cores, you can do this expensive computation twice as fast
 ;; by splitting it into two parts: (sum 0 (/ 1e7 2)), and (sum (/ 1e7 2) 1e7), then
 ;; adding those parts together. Use future to do both parts at once, and show that
