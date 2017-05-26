@@ -444,3 +444,29 @@
                   (partition-by identity)
                   (mapcat (fn [it] [(count it) (first it)]))))]
     (lazy-seq (cons (ps coll) (pronoun-seq (ps coll))))))
+
+;; Digits and bases #137
+; (= [1 2 3 4 5 0 1] (__ 1234501 10))
+; (= [0] (__ 0 11))
+; (= [1 0 0 1] (__ 9 2))
+; (= [16 18 5 24 15 1] (__ Integer/MAX_VALUE 42))
+
+(defn dig-and-bases [num base]
+  (if (zero? num)
+    [0]
+    (loop [acc [], n num]
+      (if (zero? n)
+        acc
+        (recur (cons (rem n base) acc) (quot n base))))))
+
+;; Oscilrate #144
+; (= (take 3 (__ 3.14 int double)) [3.14 3 3.0])
+; (= (take 12 (__ 0 inc dec inc dec inc)) [0 1 0 1 0 1 2 1 2 1 2 3])
+
+
+(defn oscilrate [start & fs]
+  (letfn [(oscil [start fs]
+            (lazy-seq
+              (let [curr (drop 1 (reduce #(conj %1 (%2 (last %1))) [start] fs))]
+                (concat curr (oscil (last curr) fs)))))]
+    (cons start (oscil start fs))))
