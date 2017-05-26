@@ -470,3 +470,55 @@
               (let [curr (drop 1 (reduce #(conj %1 (%2 (last %1))) [start] fs))]
                 (concat curr (oscil (last curr) fs)))))]
     (cons start (oscil start fs))))
+
+;; Decurry #158
+;(= 10 ((__ (fn [a]
+;(fn [b]
+;  (fn [c]
+;    (fn [d]
+;      (+ a b c d))))))
+;1 2 3 4))
+;(= 24 ((__ (fn [a]
+;             (fn [b]
+;               (fn [c]
+;                 (fn [d]
+;                   (* a b c d))))))
+;        1 2 3 4))
+(fn [nestedFunction]
+  (fn [& args]
+    (reduce #(%1 %2) nestedFunction args)))
+
+;; Partially Flatten a Sequence #93
+;(= (__ [["Do"] ["Nothing"]])
+;[["Do"] ["Nothing"]])
+
+;(= (__ [[[[:a :b]]] [[:c :d]] [:e :f]])
+;   [[:a :b] [:c :d] [:e :f]])
+
+;(= (__ '((1 2)((3 4)((((5 6)))))))
+;'((1 2)(3 4)(5 6)))
+(defn flat-partial [coll]
+  (if (coll? (first coll))
+    (mapcat flat-partial coll)
+    [coll]))
+
+
+;; Global take-while #114
+(defn glob-take-while [n pred coll]
+  (loop [match-cnt 0, rem coll, acc []]
+    (if (= match-cnt n)
+      (drop-last acc)
+      (let [item (first rem)
+            pres (pred item)]
+        (glob-take-while (if pres (inc match-cnt) match-cnt)
+               (rest rem)
+               (conj acc item))))))
+
+(defn glob-take-while1 [n pred coll]
+  (lazy-seq
+    (if (pred (first coll))
+      (if (= 1 n)
+        []
+        (cons (first coll) (glob-take-while1 (dec n) pred (rest coll))))
+      (cons (first coll) (glob-take-while1 n pred (rest coll))))))
+
