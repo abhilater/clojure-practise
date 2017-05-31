@@ -522,3 +522,69 @@
         (cons (first coll) (glob-take-while1 (dec n) pred (rest coll))))
       (cons (first coll) (glob-take-while1 n pred (rest coll))))))
 
+;;Insert between two items #132
+; (= '(1 :less 6 :less 7 4 3) (__ < :less [1 6 7 4 3]))
+; (= '(2) (__ > :more [2]))
+; (= [0 1 :x 2 :x 3 :x 4]  (__ #(and (pos? %) (< % %2)) :x (range 5)))
+(defn insert-between [pred x coll]
+  (if (instance? clojure.lang.LazySeq coll)
+    (lazy-seq
+      (concat (if (and
+                    (first coll)
+                    (second coll)
+                    (pred (first coll) (second coll)))
+                (conj [] (first coll) x)
+                (conj [] (first coll)))
+              (insert-between pred x (rest coll))))
+    (if (empty? coll)
+      []
+      (concat (if (and
+                    (first coll)
+                    (second coll)
+                    (pred (first coll) (second coll)))
+                (conj [] (first coll) x)
+                (conj [] (first coll)))
+              (insert-between pred x (rest coll))))))
+
+;; Longest Increasing Sub-Seq #53
+; (= (__ [1 0 1 2 3 0 4 5]) [0 1 2 3])
+; (= (__ [5 6 1 3 2 7]) [5 6])
+; (= (__ [2 3 3 4 5]) [3 4 5])
+(defn lis [coll]
+  (loop [res [], rem coll, m {}]
+    (if (empty? rem)
+      (->> (if (or (contains? m (count res))
+                   (< (count res) 2)) m (assoc m (count res) res))
+           sort
+           last
+           second)
+      (if (or (nil? (last res))
+              (> (first rem) (last res)))
+        (recur (conj res (first rem)) (rest rem) m)
+        (recur (conj [] (first rem))
+               (rest rem)
+               (if (or (contains? m (count res))
+                       (< (count res) 2)) m (assoc m (count res) res)))))))
+
+(defn lis [coll]
+  (loop [sub [], rem coll, m {}]
+    (let [add-map (fn [m sub]
+                    (if (or (contains? m (count sub))
+                            (< (count sub) 2))
+                      m
+                      (assoc m (count sub) sub)))]
+      (if (empty? rem)
+        (if (empty? m)
+          []
+          (->> (add-map m sub)
+               sort
+               last
+               second))
+
+        (if (or (nil? (last sub))
+                (> (first rem) (last sub)))
+          (recur (conj sub (first rem)) (rest rem) m)
+          (recur (conj [] (first rem))
+                 (rest rem)
+                 (add-map m sub)))))))
+
