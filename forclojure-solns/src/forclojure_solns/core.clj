@@ -511,8 +511,8 @@
       (let [item (first rem)
             pres (pred item)]
         (glob-take-while (if pres (inc match-cnt) match-cnt)
-               (rest rem)
-               (conj acc item))))))
+                         (rest rem)
+                         (conj acc item))))))
 
 (defn glob-take-while1 [n pred coll]
   (lazy-seq
@@ -551,22 +551,6 @@
 ; (= (__ [5 6 1 3 2 7]) [5 6])
 ; (= (__ [2 3 3 4 5]) [3 4 5])
 (defn lis [coll]
-  (loop [res [], rem coll, m {}]
-    (if (empty? rem)
-      (->> (if (or (contains? m (count res))
-                   (< (count res) 2)) m (assoc m (count res) res))
-           sort
-           last
-           second)
-      (if (or (nil? (last res))
-              (> (first rem) (last res)))
-        (recur (conj res (first rem)) (rest rem) m)
-        (recur (conj [] (first rem))
-               (rest rem)
-               (if (or (contains? m (count res))
-                       (< (count res) 2)) m (assoc m (count res) res)))))))
-
-(defn lis [coll]
   (loop [sub [], rem coll, m {}]
     (let [add-map (fn [m sub]
                     (if (or (contains? m (count sub))
@@ -587,4 +571,51 @@
           (recur (conj [] (first rem))
                  (rest rem)
                  (add-map m sub)))))))
+
+;; Universal computation engine #121
+;(= 2 ((__ '(/ a b))
+;'{b 8 a 16}))
+;(= [6 0 -4]
+;   (map (__ '(* (+ 2 a)
+;                (- 10 b)))
+;        '[{a 1 b 8}
+;          {b 5 a -2}
+;          {a 2 b 11}]))
+(defn univ-comp [form]
+  (fn [vals]
+    (let [env (merge {'+ + '- - '* * '/ /} vals)]
+      ((fn eval- [f]
+         (if (seq? f)
+           (let [[op & args] f]
+             (apply (env op) (map eval- args)))
+           (get env f f))) form))))
+
+
+;Prime Sandwich  #116
+;(= false (__ 4))
+;(= true (__ 563))
+
+(def prime-nums
+  ((fn get-primes [primes sieve]
+     (lazy-seq
+       (let [d (first sieve)
+             r (filter #(pos? (mod % d)) (rest sieve))]
+         (cons d (get-primes primes r)))))
+    [] (drop 2 (range))))
+
+(defn prime-sandswich [num]
+  (if (= num 3)
+    false
+    (let [prime-nums ((fn get-primes [primes sieve]
+                        (lazy-seq
+                          (let [d (first sieve)
+                                r (filter #(pos? (mod % d)) (rest sieve))]
+                            (cons d (get-primes primes r)))))
+                       [] (drop 2 (range)))
+          prev (last (take-while #(< % num) prime-nums))
+          next (some #(and (> % num) %) prime-nums)
+          sandwich (last (take-while #(<= % num) prime-nums))
+          res (and sandwich (= num sandwich) prev next
+                   (= num (quot (+ prev next) 2)))]
+      (if (nil? res) false res))))
 
