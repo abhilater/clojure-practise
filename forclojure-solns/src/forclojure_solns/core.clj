@@ -1,4 +1,5 @@
 (ns forclojure-solns.core
+  (:require [clojure.tools.trace :as tr])
   (:gen-class))
 
 (defn -main
@@ -619,3 +620,48 @@
                    (= num (quot (+ prev next) 2)))]
       (if (nil? res) false res))))
 
+;; Lazy Searching #108
+; (= 3 (__ [3 4 5]))
+; (= 4 (__ [1 2 3 4 5 6 7] [0.5 3/2 4 19]))
+; (= 7 (__ (range) (range 0 100 7/6) [2 3 5 7 11 13]))
+
+(defn search-lazily [& colls]
+  (let [search (fn [num]
+                 (fn [coll]
+                   (let [n (last (take-while #(<= % num) coll))]
+                     (if (= n num) num nil))))
+        ref-coll (first colls)
+        rest-colls (rest colls)]
+    (loop [rem ref-coll, res nil]
+      (if (or (empty? rem) (not (nil? res)))
+        res
+        (recur (rest rem)
+               (if (some nil? (map (search (first rem)) rest-colls))
+                 nil
+                 (first rem)))))))
+
+;; Analyze a Tic-Tac-Toe Board #73
+; (= nil (__ [[:e :e :e]
+;[:e :e :e]
+;[:e :e :e]]))
+;(= :o (__ [[:e :x :e]
+;           [:o :o :o]
+;           [:x :e :x]]))
+;(= :x (__ [[:x :e :e]
+;           [:o :x :e]
+;           [:o :e :x]]))
+
+(defn analyze-ttt-board [matrix]
+  (let [valid-coords [[[0 0] [1 1] [2 2]]
+                     [[0 2] [1 1] [2 0]]
+                     [[0 0] [0 1] [0 2]]
+                     [[1 0] [1 1] [1 2]]
+                     [[2 0] [2 1] [2 2]]
+                     [[0 0] [1 0] [2 0]]
+                     [[0 1] [1 1] [2 1]]
+                     [[0 2] [1 2] [2 2]]]
+        check? (fn [coord-seq id]
+                 (every? #(= % id) (map (fn [coord] (get-in matrix coord)) coord-seq)))]
+    (condp (some  valid-coords)
+      )
+    ))
